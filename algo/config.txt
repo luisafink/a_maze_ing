@@ -1,0 +1,28 @@
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+PERFECT=True
+SEED=42
+OUTPUT_FILE=maze.txt
+
+
+create_grid()
+get_unvisited_neighbors(cell)
+remove_wall(current, neighbor)
+dann generate()
+
+
+grid erstellen
+startzelle holen
+startzelle besucht = True
+solange noch arbeit da ist:
+    nachbarn suchen
+    wenn es unbesuchte nachbarn gibt:
+        einen zufällig wählen
+        wand entfernen
+        aktuelle zelle merken
+        zum nachbarn gehen
+        nachbar besucht = True
+    sonst:
+        zurückgehen
