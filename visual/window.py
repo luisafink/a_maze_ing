@@ -30,7 +30,7 @@ def find_path(
     entry_cell: tuple[int, int],
     exit_cell: tuple[int, int],
     connections: list[tuple[tuple[int, int], tuple[int, int]]]
-    ) -> list[tuple[int, int]]:
+        ) -> list[tuple[int, int]]:
     queue: list[tuple[int, int]] = [entry_cell]
     visited: set[tuple[int, int]] = {entry_cell}
     came_from: dict[tuple[int, int], tuple[int, int]] = {}
@@ -61,7 +61,8 @@ def find_path(
 
 
 def draw_cell(canvas, row: int, col: int, tile_size: int,
-              connections, entry_cell, exit_cell, path, show_path) -> None:
+              connections, entry_cell, exit_cell, path,
+              show_path, wall_color) -> None:
     x1 = col * tile_size  # oben
     y1 = row * tile_size  # links
     x2 = x1 + tile_size  # unten
@@ -82,30 +83,30 @@ def draw_cell(canvas, row: int, col: int, tile_size: int,
     # oben
     if (row, col) != entry_cell:
         if not is_connected((row, col), (row - 1, col), connections):
-            canvas.create_line(x1, y1, x2, y1, width=4)
+            canvas.create_line(x1, y1, x2, y1, width=4, fill=wall_color)
 
     # rechts
     if not is_connected((row, col), (row, col + 1), connections):
-        canvas.create_line(x2, y1, x2, y2, width=4)
+        canvas.create_line(x2, y1, x2, y2, width=4, fill=wall_color)
 
     # unten
     if (row, col) != exit_cell:
         if not is_connected((row, col), (row + 1, col), connections):
-            canvas.create_line(x1, y2, x2, y2, width=4)
+            canvas.create_line(x1, y2, x2, y2, width=4, fill=wall_color)
 
     # links
     if not is_connected((row, col), (row, col - 1), connections):
-        canvas.create_line(x1, y1, x1, y2, width=4)
+        canvas.create_line(x1, y1, x1, y2, width=4, fill=wall_color)
 
 
 def redraw_maze(canvas, maze, tile_size, connections,
-                entry_cell, exit_cell, path, show_path, ) -> None:
+                entry_cell, exit_cell, path, show_path, wall_color,) -> None:
     canvas.delete("all")  # loescht alles was gemalt wurde
 
     for row in range(len(maze)):
         for col in range(len(maze[row])):
             draw_cell(canvas, row, col, tile_size, connections,
-                      entry_cell, exit_cell, path, show_path,)
+                      entry_cell, exit_cell, path, show_path, wall_color,)
             # malt alles neu
             # es ueberschneidet sich nix und wird frisch gemalt
 
@@ -140,13 +141,15 @@ def start_window() -> None:
 
     show_path = True
 
+    wall_color = "black"
+
     entry_cell = (0, 1)
     exit_cell = (4, 3)
 
     path = find_path(entry_cell, exit_cell, connections)
 
     redraw_maze(canvas, maze, tile_size, connections,
-                entry_cell, exit_cell, path, show_path,)
+                entry_cell, exit_cell, path, show_path, wall_color,)
     # trailing comma
     # tkinter hat automatisch event
     # muss einfach dabei sein
@@ -155,20 +158,27 @@ def start_window() -> None:
         nonlocal show_path  # erkennt variable von ausserhalb
         show_path = not show_path  # true -> false, false -> true
 
-        redraw_maze(
-            canvas,
-            maze,
-            tile_size,
-            connections,
-            entry_cell,
-            exit_cell,
-            path,
-            show_path,
-        )
+        redraw_maze(canvas, maze, tile_size, connections,
+                    entry_cell, exit_cell, path, show_path, wall_color,)
+
+    def change_wall_color(event) -> None:
+        nonlocal wall_color
+
+        if wall_color == "black":
+            wall_color = "blue"
+        elif wall_color == "blue":
+            wall_color = "red"
+        else:
+            wall_color = "black"
+
+        redraw_maze(canvas, maze, tile_size, connections,
+                    entry_cell, exit_cell, path, show_path, wall_color,)
 
     root.bind("p", toggle_path)
     # bind verbindet ereignisse mit funktion
     # taste p = (not) show_path
+
+    root.bind("c", change_wall_color)
 
     root.mainloop()
     # Hält das Fenster offen
