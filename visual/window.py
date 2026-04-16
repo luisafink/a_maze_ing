@@ -2,12 +2,66 @@ import tkinter as tk
 
 
 # ist die wand da oder nicht?
+# true wenn weg frei
 def is_connected(cell1, cell2, connections) -> bool:
     return (cell1, cell2) in connections or (cell2, cell1) in connections
 
 
+def get_neighbors(cell: tuple[int, int],
+                  connections: list[tuple[tuple[int, int], tuple[int, int]]]
+                  ) -> list[tuple[int, int]]:
+    neighbors: list[tuple[int, int]] = []
+    row, col = cell
+
+    possible_neighbors = [
+        (row - 1, col),
+        (row, col + 1),
+        (row + 1, col),
+        (row, col - 1),
+    ]
+
+    for neighbor in possible_neighbors:
+        if is_connected(cell, neighbor, connections):
+            neighbors.append(neighbor)
+    return neighbors
+
+
+def find_path(
+    entry_cell: tuple[int, int],
+    exit_cell: tuple[int, int],
+    connections: list[tuple[tuple[int, int], tuple[int, int]]]
+    ) -> list[tuple[int, int]]:
+    queue: list[tuple[int, int]] = [entry_cell]
+    visited: set[tuple[int, int]] = {entry_cell}
+    came_from: dict[tuple[int, int], tuple[int, int]] = {}
+
+    while queue:
+        current = queue.pop(0)  # nimmt erste zahl und "loescht" sie
+
+        if current == exit_cell:
+            path = [current]
+            # while sucht vom ende bis zum start
+            # ist current im path drin dann ist das der weg
+            while current in came_from:
+                current = came_from[current]
+                path.append(current)
+
+            path.reverse()  # dreht die reihenfolge um
+            return path
+
+        neighbors = get_neighbors(current, connections)
+
+        for neighbor in neighbors:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                came_from[neighbor] = current
+                queue.append(neighbor)
+
+    return []  # wenns kein weg gibt
+
+
 def draw_cell(canvas, row: int, col: int, tile_size: int,
-              connections, entry_cell, exit_cell) -> None:
+              connections, entry_cell, exit_cell, path, show_path) -> None:
     x1 = col * tile_size  # oben
     y1 = row * tile_size  # links
     x2 = x1 + tile_size  # unten
@@ -18,8 +72,10 @@ def draw_cell(canvas, row: int, col: int, tile_size: int,
         color = "green"  # entry
     elif (row, col) == exit_cell:
         color = "red"  # exit
+    elif show_path and (row, col) in path:
+        color = "lightblue"  # weg wenn er angezeigt werden soll
     else:
-        color = "white"  # weg
+        color = "white"  # waende
 
     canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
 
@@ -40,6 +96,18 @@ def draw_cell(canvas, row: int, col: int, tile_size: int,
     # links
     if not is_connected((row, col), (row, col - 1), connections):
         canvas.create_line(x1, y1, x1, y2, width=4)
+
+
+def redraw_maze(canvas, maze, tile_size, connections,
+                entry_cell, exit_cell, path, show_path, ) -> None:
+    canvas.delete("all")  # loescht alles was gemalt wurde
+
+    for row in range(len(maze)):
+        for col in range(len(maze[row])):
+            draw_cell(canvas, row, col, tile_size, connections,
+                      entry_cell, exit_cell, path, show_path,)
+            # malt alles neu
+            # es ueberschneidet sich nix und wird frisch gemalt
 
 
 def start_window() -> None:
@@ -69,15 +137,42 @@ def start_window() -> None:
         ((2, 3), (3, 3)),
         ((3, 3), (4, 3)),
     ]
+
+    show_path = True
+
     entry_cell = (0, 1)
     exit_cell = (4, 3)
 
-    for row in range(len(maze)):
-        for col in range(len(maze[row])):
-            draw_cell(canvas, row, col, tile_size,
-                      connections, entry_cell, exit_cell,)  # trailing comma
+    path = find_path(entry_cell, exit_cell, connections)
 
-    root.mainloop()  # Hält das Fenster offen
+    redraw_maze(canvas, maze, tile_size, connections,
+                entry_cell, exit_cell, path, show_path,)
+    # trailing comma
+    # tkinter hat automatisch event
+    # muss einfach dabei sein
+
+    def toggle_path(event) -> None:
+        nonlocal show_path  # erkennt variable von ausserhalb
+        show_path = not show_path  # true -> false, false -> true
+
+        redraw_maze(
+            canvas,
+            maze,
+            tile_size,
+            connections,
+            entry_cell,
+            exit_cell,
+            path,
+            show_path,
+        )
+
+    root.bind("p", toggle_path)
+    # bind verbindet ereignisse mit funktion
+    # taste p = (not) show_path
+
+    root.mainloop()
+    # Hält das Fenster offen
+    # alles wird vorbereitet erst dann fenster offen
 
 
 if __name__ == "__main__":
