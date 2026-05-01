@@ -1,7 +1,9 @@
 class Cell:
-    def __init__(self, x, y) -> None:
+    """One maze cell with bit-encoded walls."""
+
+    def __init__(self, x: int, y: int) -> None:
         self.x = x
         self.y = y
         self.wall = 15
         self.visited = False
-        pass
+        self.blocked = False
