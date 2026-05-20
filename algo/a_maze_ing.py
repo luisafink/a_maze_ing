@@ -1,6 +1,7 @@
 from __future__ import annotations
 import sys
-from generator import MazeGenerator
+from algo.generator import MazeGenerator
+from visual.window import start_window
 
 
 def main() -> int:
@@ -14,8 +15,9 @@ def main() -> int:
         generator.generate()
         generator.write_output()
 
-        print(generator.render_ascii(show_path=False))
         print(f"Maze written to {generator.output_file}")
+
+        start_window(generator)
 
     except (OSError, ValueError) as error:
         print(f"Error: {error}")
@@ -26,5 +28,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-#python3 a_maze_ing.py config.txt

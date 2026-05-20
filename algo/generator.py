@@ -5,7 +5,7 @@ from pathlib import Path
 import random
 from typing import Deque
 
-from cell import Cell
+from algo.cell import Cell
 
 NORTH = 1
 EAST = 2
