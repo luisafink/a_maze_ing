@@ -12,6 +12,8 @@ EAST = 2
 SOUTH = 4
 WEST = 8
 
+LOOP_CHANCE = 0.15
+
 DIRECTIONS = {
     "N": (0, -1, NORTH, SOUTH),
     "E": (1, 0, EAST, WEST),
@@ -164,6 +166,10 @@ class MazeGenerator:
         self._create_grid()
         self._place_42_pattern()
         self._carve_with_backtracker()
+
+        if not self.perfect:
+            self._add_loops()
+
         self._check_wall_coherence()
         self._check_no_3x3_open_area()
 
@@ -324,6 +330,42 @@ class MazeGenerator:
 
         raise ValueError("Cells are not direct neighbors")
 
+    def _add_loops(self) -> None:
+        """Remove extra walls so the maze has loops (not perfect)."""
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.maze[x][y]
+
+                if cell.blocked:
+                    continue
+
+                for dx, dy, wall, opposite in (
+                    (1, 0, EAST, WEST),
+                    (0, 1, SOUTH, NORTH),
+                ):
+                    if not cell.wall & wall:
+                        continue
+
+                    next_cell = (x + dx, y + dy)
+
+                    if not self._inside(next_cell):
+                        continue
+
+                    neighbor = self.maze[x + dx][y + dy]
+
+                    if neighbor.blocked:
+                        continue
+
+                    if self.rng.random() > LOOP_CHANCE:
+                        continue
+
+                    cell.wall &= ~wall
+                    neighbor.wall &= ~opposite
+
+                    if self._opens_forbidden_area(x, y):
+                        cell.wall |= wall
+                        neighbor.wall |= opposite
+
     def shortest_path(self) -> str:
         """Return the shortest path from entry to exit."""
         queue: Deque[Coord] = deque([self.entry])
@@ -481,6 +523,15 @@ class MazeGenerator:
             for left in range(self.width - 2):
                 if self._is_open_3x3(left, top):
                     raise ValueError("Forbidden 3x3 open area found")
+
+    def _opens_forbidden_area(self, x: int, y: int) -> bool:
+        """Return True if cell (x, y) sits in a 3x3 open area."""
+        for top in range(max(0, y - 2), min(y, self.height - 3) + 1):
+            for left in range(max(0, x - 2), min(x, self.width - 3) + 1):
+                if self._is_open_3x3(left, top):
+                    return True
+
+        return False
 
     def _is_open_3x3(self, left: int, top: int) -> bool:
         """Return True if a 3x3 area has no internal walls."""

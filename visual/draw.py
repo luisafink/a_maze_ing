@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 
+from algo.cell import Cell
 from algo.generator import EAST, SOUTH
 
 Coord = tuple[int, int]
@@ -33,7 +34,7 @@ def get_cell_color(
 
 def draw_cell(
     canvas: tk.Canvas,
-    cell,
+    cell: Cell,
     x: int,
     y: int,
     tile_size: int,
