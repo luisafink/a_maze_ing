@@ -200,21 +200,35 @@ class MazeGenerator:
             print("Warning: maze too small for the 42 pattern; skipped.")
             return
 
-        for top in range(1, self.height - pattern_height):
-            for left in range(1, self.width - pattern_width):
-                cells = self._pattern_cells_at(pattern, left, top)
+        # Prefer the most centered position and only move outwards if the
+        # center overlaps the entry/exit or would disconnect the maze.
+        center_left = (self.width - pattern_width) / 2
+        center_top = (self.height - pattern_height) / 2
 
-                if self.entry in cells or self.exit_cell in cells:
-                    continue
+        candidates = [
+            (left, top)
+            for top in range(1, self.height - pattern_height)
+            for left in range(1, self.width - pattern_width)
+        ]
+        candidates.sort(
+            key=lambda pos: (pos[0] - center_left) ** 2
+            + (pos[1] - center_top) ** 2
+        )
 
-                if self._open_grid_is_connected(cells):
-                    self.pattern_cells = cells
+        for left, top in candidates:
+            cells = self._pattern_cells_at(pattern, left, top)
 
-                    for x, y in cells:
-                        self.maze[x][y].blocked = True
-                        self.maze[x][y].visited = True
+            if self.entry in cells or self.exit_cell in cells:
+                continue
 
-                    return
+            if self._open_grid_is_connected(cells):
+                self.pattern_cells = cells
+
+                for x, y in cells:
+                    self.maze[x][y].blocked = True
+                    self.maze[x][y].visited = True
+
+                return
 
         print("Warning: could not place the 42 pattern safely; skipped.")
 
